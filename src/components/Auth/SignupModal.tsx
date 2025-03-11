@@ -11,14 +11,18 @@ import {
   InputLabel,
   IconButton,
   Avatar,
+  styled,
+  CircularProgress,
 } from "@mui/material";
-import HowToRegIcon from '@mui/icons-material/HowToReg';
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import HowToRegIcon from "@mui/icons-material/HowToReg";
 import CloseIcon from "@mui/icons-material/Close";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Close } from "@mui/icons-material";
 
-// Define common form values
+//common form values
 interface FormValues {
   fullName: string;
   email: string;
@@ -30,8 +34,19 @@ interface FormValues {
   location?: string; // Guide specific
   country?: string; // Tourist specific
 }
+const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
+  height: 1,
+  overflow: "hidden",
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  whiteSpace: "nowrap",
+  width: 1,
+});
 
-// Define the schema validation for Tourist and Guide
+//  schema validation for Tourist and Guide
 const schemaTourist = z.object({
   fullName: z.string().min(1, "Full Name is required"),
   email: z.string().min(1, "Email is required").email("Enter a valid email"),
@@ -52,17 +67,24 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
   onClose,
 }) => {
   const [role, setRole] = useState<string>("tourist");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const {
+    control,
     register,
+    watch,
     handleSubmit,
-    formState: { errors },
+    setValue,
     reset,
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(role === "tourist" ? schemaTourist : schemaGuide),
   });
 
+  const watchProfile = watch("profile","");
+
   const onSubmit = (data: FormValues) => {
+    setIsLoading(true);
     console.log(data);
   };
 
@@ -72,25 +94,49 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
     reset(); // Reset the form when role changes
   };
 
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    console.log(event.target.files?.[0]);
+    if (event.target.files === null) return;
+    const file = event.target.files[0];
+    if (file === undefined) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "GuideWave");
+    formData.append("cloud_name", "dpe26xwu8");
+    const response = await fetch(
+      "https://api.cloudinary.com/v1_1/dpe26xwu8/image/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+    const data = await response.json();
+    console.log(data);
+    setValue("profile", data.url);
+  };
+
   return (
     <Modal open={open} onClose={onClose}>
       <Box
         sx={{
           position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 600,
-            maxHeight: "90vh", 
-            overflowY: "auto", 
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-            borderRadius: 3,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            paddingTop: "20px",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 450,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          bgcolor: "background.paper",
+          boxShadow: 24,
+          p: 4,
+          borderRadius: 3,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          paddingTop: "20px",
         }}
       >
         <IconButton
@@ -155,14 +201,7 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
           helperText={errors.phoneNumber?.message}
           sx={{ mb: 2 }}
         />
-        <TextField
-          label="Profile"
-          fullWidth
-          {...register("profile")}
-          error={!!errors.profile}
-          helperText={errors.profile?.message}
-          sx={{ mb: 2 }}
-        />
+
         <FormControl fullWidth sx={{ mb: 2 }}>
           <InputLabel>Role</InputLabel>
           <Select
@@ -170,7 +209,7 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
             label="Role"
             {...register("role", { onChange: handleRoleChange })}
           >
-            <MenuItem value="Tourist">Tourist</MenuItem>
+            <MenuItem value="tourist">Tourist</MenuItem>
             <MenuItem value="guide">Guide</MenuItem>
           </Select>
         </FormControl>
@@ -205,14 +244,65 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
             />
           </>
         )}
+        <Button
+          component="label"
+          variant="contained"
+          fullWidth
+          startIcon={<CloudUploadIcon />}
+          color="secondary"
+          sx={{ mb: 2, borderRadius: 50 }}
+        >
+          Upload Profile
+          <VisuallyHiddenInput
+            accept="image/*"
+            type="file"
+            onChange={handleFileUpload}
+          />
+        </Button>
+        {watchProfile !== "" && (
+          <Box
+            sx={{
+              border: "1px solid #555",
+              borderRadius: "5px",
+              position: "relative",
+              width: "fit-content",
+            }}
+          >
+            <IconButton
+              sx={{
+                position: "absolute",
+                top: 5,
+                right: 5,
+                backgroundColor: "#ddd8",
+                width: 25,
+                height: 25,
+              }}
+              onClick={() => {
+                setValue("profile", "");
+              }}
+            >
+              <Close />
+            </IconButton>
+            <img
+              src={watchProfile}
+              alt="prof_img"
+              style={{
+                width: 375,
+                objectFit: "cover",
+              }}
+            />
+          </Box>
+        )}
 
         <Button
           variant="contained"
           fullWidth
           onClick={handleSubmit(onSubmit)}
-          sx={{ mb: 2 ,borderRadius: 50 }}
+          disabled={isLoading}
+          endIcon={isLoading ? <CircularProgress size="1rem" /> : null}
+          sx={{ mb: 2, borderRadius: 50 }}
         >
-          Sign Up as {role}
+          {isLoading ? " Registering" : "Register as " + role}
         </Button>
       </Box>
     </Modal>
