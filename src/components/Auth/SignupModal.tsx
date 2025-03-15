@@ -20,7 +20,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Close } from "@mui/icons-material";
+import { Close, Visibility, VisibilityOff } from "@mui/icons-material";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { log } from "node:console";
+
 
 //common form values
 interface FormValues {
@@ -68,6 +72,7 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
 }) => {
   const [role, setRole] = useState<string>("tourist");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
@@ -81,11 +86,46 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
     resolver: zodResolver(role === "tourist" ? schemaTourist : schemaGuide),
   });
 
-  const watchProfile = watch("profile","");
+  const watchProfile = watch("profile", "");
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     console.log(data);
+  
+    try {
+      let apiEndpoint = "";
+      
+      // Determine API endpoint based on role
+      if (role === "tourist") {
+        apiEndpoint = "https://localhost:7015/api/Tourists"; 
+      } else if (role === "guide") {
+        apiEndpoint = "https://localhost:7015/api/Guide"; 
+      }
+  
+      // Make API request using axios
+      const response = await axios.post(apiEndpoint, data);
+     
+  
+      toast.success("Registration successful");
+      console.log("Response:", response.data);
+      reset();
+      onClose();
+    } catch (error) {
+      // Handle errors
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        const errorResponse = error.response.data;
+        toast.warning(errorResponse);
+
+
+      }
+     else {
+      toast.error("Registration failed. Please try again.");
+    }
+      console.error("Error:", error);
+
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRoleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
@@ -183,15 +223,26 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
           helperText={errors.email?.message}
           sx={{ mb: 2 }}
         />
-
         <TextField
           label="Password"
-          type="password"
+          type={showPassword ? "text" : "password"}
           fullWidth
           {...register("password")}
           error={!!errors.password}
           helperText={errors.password?.message}
+          variant="outlined"
           sx={{ mb: 2 }}
+          InputProps={{
+            endAdornment: (
+              <IconButton
+                onClick={() => setShowPassword(!showPassword)}
+                color="primary"
+                edge="end"
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            ),
+          }}
         />
         <TextField
           label="Phone Number"

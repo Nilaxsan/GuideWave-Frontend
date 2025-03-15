@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { Box, Modal, Typography, Button, TextField, IconButton, Avatar } from "@mui/material";
+import {
+  Box,
+  Modal,
+  Typography,
+  Button,
+  TextField,
+  IconButton,
+  Avatar,
+  CircularProgress,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close"; // Import CloseIcon
 import Visibility from "@mui/icons-material/Visibility"; // Import Visibility icon
 import VisibilityOff from "@mui/icons-material/VisibilityOff"; // Import VisibilityOff icon
@@ -7,6 +16,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined"; // Import LockO
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 
 interface LoginModalProps {
   open: boolean;
@@ -49,9 +59,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
 
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const onSubmit = (data: FormValues) => {
+    setIsLoading(true);
     console.log(data);
+    toast.success("Login successful");
+    onClose();
   };
 
   return (
@@ -92,8 +106,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
           <Typography variant="h5" gutterBottom align="center">
             Login
           </Typography>
-          
-          <Avatar sx={{  bgcolor: "primary.main", alignSelf: "center", width: 70, height: 70 }} >
+
+          <Avatar
+            sx={{
+              bgcolor: "primary.main",
+              alignSelf: "center",
+              width: 70,
+              height: 70,
+            }}
+          >
             <LockOutlinedIcon />
           </Avatar>
 
@@ -104,7 +125,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             error={!!errors.email}
             helperText={errors.email?.message}
             variant="outlined"
-            sx={{ mb: 2 }} 
+            sx={{ mb: 2 }}
           />
           <TextField
             label="Password"
@@ -114,10 +135,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             error={!!errors.password}
             helperText={errors.password?.message}
             variant="outlined"
-            sx={{ mb: 2}} 
+            sx={{ mb: 2 }}
             InputProps={{
               endAdornment: (
-                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  color="primary"
+                  edge="end"
+                >
                   {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               ),
@@ -128,9 +153,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             variant="contained"
             color="primary"
             fullWidth
-            sx={{ mt: 1, borderRadius: 50 }}
+            disabled={isLoading}
+            endIcon={isLoading ? <CircularProgress size="1rem" /> : null}
+            sx={{ mb: 2, borderRadius: 50 }}
           >
-            Login
+            {isLoading ? " Logging In " : "Login " }
           </Button>
         </Box>
       </form>
