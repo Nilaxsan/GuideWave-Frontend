@@ -54,7 +54,7 @@ const VisuallyHiddenInput = styled("input")({
 const schemaTourist = z.object({
   fullName: z.string().min(1, "Full Name is required"),
   email: z.string().min(1, "Email is required").email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(4, "Password must be at least 4 characters"),
   phoneNumber: z.string().min(1, "Phone Number is required"),
   profile: z.string().min(1, "Profile is required"),
   role: z.enum(["tourist", "guide"]),
@@ -102,7 +102,7 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
         apiEndpoint = "https://localhost:7015/api/Guide"; 
       }
   
-      // Make API request using axios
+      // Make API request using axiosx  
       const response = await axios.post(apiEndpoint, data);
      
   
@@ -156,6 +156,7 @@ const SignupModal: React.FC<{ open: boolean; onClose: () => void }> = ({
     const data = await response.json();
     console.log(data);
     setValue("profile", data.url);
+    toast.success("Profile image uploaded successfully");
   };
 
   return (

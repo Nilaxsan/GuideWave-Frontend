@@ -8,6 +8,8 @@ import {
   IconButton,
   Avatar,
   CircularProgress,
+  Link,
+  MenuItem,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close"; // Import CloseIcon
 import Visibility from "@mui/icons-material/Visibility"; // Import Visibility icon
@@ -17,6 +19,9 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
+import { Link as RouterLink ,useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import axios from "axios";
 
 interface LoginModalProps {
   open: boolean;
@@ -26,25 +31,29 @@ interface LoginModalProps {
 interface FormValues {
   password: string;
   email: string;
+  role: string;
 }
 
 const initialState: FormValues = {
   password: "",
   email: "",
+  role: "",
 };
 
 const schemaStudent = z.object({
   email: z.string().min(1, "Email is required").email("Enter valid email"),
-  password: z
-    .string()
-    .min(8, "Password must have at least 8 characters")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(
-      /[^a-zA-Z0-9]/,
-      "Password must contain at least one special character"
-    ),
+  // password: z
+  //   .string()
+  //   .min(8, "Password must have at least 8 characters")
+  //   .regex(/[0-9]/, "Password must contain at least one number")
+  //   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  //   .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  //   .regex(
+  //     /[^a-zA-Z0-9]/,
+  //     "Password must contain at least one special character"
+  //   ),
+  password: z.string().min(4, "Password must be at least 4 characters"),
+  role: z.string().min(1, "Role is required"),
 });
 
 const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
@@ -56,16 +65,51 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
     resolver: zodResolver(schemaStudent),
     defaultValues: initialState,
   });
+  const navigate = useNavigate();
 
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
-    console.log(data);
-    toast.success("Login successful");
-    onClose();
+    try {
+      const endpoint =
+        data.role === "Guide"
+          ? "https://localhost:7015/api/Guide/login"
+          : "https://localhost:7015/api/Tourists/login";
+      const response = await axios.post(endpoint, {
+        email: data.email,
+        password: data.password,
+      });
+      console.log("Response:", response.data);
+      const responseData = response.data;
+      const decodedToken: any = jwtDecode(responseData.token);
+
+      localStorage.setItem("token", responseData.token);
+      localStorage.setItem("Id", decodedToken.id); 
+      localStorage.setItem("Role", decodedToken.role); 
+      toast.success("Login successful");
+      onClose();
+
+      // Redirect to the appropriate home page
+      if (decodedToken.role === "Guide") {
+        navigate("/guide-home");
+      } else {
+        navigate("/tourist-home");
+      }
+
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        const errorResponse = error.response.data;
+        toast.warning(errorResponse);
+      } else {
+        toast.error("Login failed. Please try again.");
+      }
+      console.error("Error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -77,7 +121,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: 350,
+            width: 400,
             bgcolor: "background.paper",
             boxShadow: 24,
             p: 4,
@@ -148,6 +192,20 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
               ),
             }}
           />
+          <TextField
+            select
+            label="Role"
+            fullWidth
+            {...register("role")}
+            error={!!errors.role}
+            helperText={errors.role?.message}
+            variant="outlined"
+            sx={{ mb: 2 }}
+          >
+            <MenuItem value="Guide">Guide</MenuItem>
+            <MenuItem value="Tourist">Tourist</MenuItem>
+          </TextField>
+
           <Button
             type="submit"
             variant="contained"
@@ -157,8 +215,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             endIcon={isLoading ? <CircularProgress size="1rem" /> : null}
             sx={{ mb: 2, borderRadius: 50 }}
           >
-            {isLoading ? " Logging In " : "Login " }
+            {isLoading ? " Logging In " : "Login "}
           </Button>
+         
+          <Typography align="center">
+            <Link component={RouterLink} to="/forgot-password" variant="body2">Forgot password?</Link>
+          </Typography>
         </Box>
       </form>
     </Modal>
