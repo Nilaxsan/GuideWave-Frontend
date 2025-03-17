@@ -7,6 +7,7 @@ import GuideHome from './pages/GuideHome';
 import SuccessfulRegistration from './pages/SuccessfulRegistration';
 import ForgotPassword from './pages/ForgotPassword';
 import VerifyOtp from './pages/VerifyOtp';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
@@ -16,7 +17,7 @@ function App() {
     <Route path ="/register-success" element={<SuccessfulRegistration />} />
     <Route path ="/forgot-password" element={<ForgotPassword />} />
     <Route path ="/verify-otp" element={<VerifyOtp />} />
-    {/* <Route path ="/reset-password" element={<ResetPassword />} /> */}
+    <Route path ="/reset-password" element={<ResetPassword />} />
     <Route path ="/tourist-home" element={<TouristHome />} />
     <Route path ="/guide-home" element={<GuideHome />} />
 

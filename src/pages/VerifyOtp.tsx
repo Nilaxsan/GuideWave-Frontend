@@ -1,5 +1,5 @@
 import { TextField, Button, CircularProgress } from "@mui/material";
-import LockIcon from "@mui/icons-material/Lock";
+import SecurityIcon from '@mui/icons-material/Security';
 import CustomCard from "../components/Auth/CustomCard";
 import { useState } from "react";
 import {  z } from "zod";
@@ -52,9 +52,9 @@ try {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <CustomCard
-        title="Enter your OTP"
-        description="Enter the OTP sent to your email address."
-        icon={<LockIcon fontSize="large" />}
+        title="Enter OTP"
+        description="Enter your OTP sent to your email address."
+        icon={<SecurityIcon fontSize="large" />}
         >
         <TextField
           label="Enter your Otp"
